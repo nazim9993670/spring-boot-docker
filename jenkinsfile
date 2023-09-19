@@ -1,0 +1,32 @@
+pipeline {
+    agent any
+    tools {
+        maven 'maven_home'
+    }
+    stages {
+        stage("Maven Build") {
+            steps {
+                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/nazim9993670/spring-boot-docker']])
+                sh 'mvn clean install'
+            }
+        }
+        stage("Build Docker Image") {
+            steps {
+                script {
+                    env.DOCKER_HOST = 'tcp://localhost:2375'
+                    sh 'wsl docker build -t nazimkhan225521/spring-boot-docker .'
+                }
+            }
+        }
+        stage("Push Docker Image to Docker Hub") {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'nazimkhan225521', variable: 'docker-springboot')]) {
+                    sh 'docker login -u nazimkhan225521 -p ${docker-springboot}'    
+}
+                    sh 'docker push nazimkhan225521/spring-boot-docker'
+                }
+            }
+        }
+    }
+}
